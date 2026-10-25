@@ -1,0 +1,49 @@
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/*.tfvars
+terraform/.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Lambda packaging
+lambda/**/package.zip
+agent-deployment.zip
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+*.pem
+*.key
+**/.streamlit/secrets.toml
+secrets.toml
+
+# Runtime logs & response dumps (may leak account IDs, ARNs, prompts)
+logs.txt
+logs2.txt
+errs.txt
+*.log
+*.bin
+
+# Generated compliance reports (produced by scripts/generate_report.py)
+scripts/scf-report-*.md

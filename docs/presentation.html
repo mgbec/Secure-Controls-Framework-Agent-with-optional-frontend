@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SCF Compliance Agent — Presentation</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --ink: #e6edf3;
+    --muted: #9aa7b4;
+    --accent: #ff9900;      /* AWS orange */
+    --accent2: #c925d1;     /* A2A magenta */
+    --navy: #232f3e;
+    --green: #147b3b;
+    --line: #30363d;
+    /* webcam-safe corner (bottom-right by default) */
+    --cam-w: 320px;
+    --cam-h: 240px;
+    --pad: 64px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .deck { height: 100vh; width: 100vw; position: relative; overflow: hidden; }
+  .slide {
+    position: absolute; inset: 0; display: none;
+    padding: var(--pad);
+    /* reserve space so slide content never collides with the webcam corner */
+    padding-right: calc(var(--pad) + 40px);
+    padding-bottom: calc(var(--cam-h) + 48px);
+    flex-direction: column; justify-content: center;
+    animation: fade .35s ease;
+  }
+  .slide.active { display: flex; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  h1 { font-size: 58px; line-height: 1.05; margin: 0 0 18px; letter-spacing: -0.5px; }
+  h2 { font-size: 40px; line-height: 1.1; margin: 0 0 28px; letter-spacing: -0.3px; }
+  .tag { font-size: 24px; color: var(--muted); margin: 0 0 8px; }
+  .kicker { text-transform: uppercase; letter-spacing: 3px; font-size: 14px; color: var(--accent); margin: 0 0 18px; font-weight: 600; }
+  ul { font-size: 26px; line-height: 1.55; margin: 0; padding-left: 28px; max-width: 1100px; }
+  li { margin: 0 0 12px; }
+  li b { color: #fff; }
+  .lead { font-size: 30px; line-height: 1.5; max-width: 1100px; color: var(--ink); }
+  .muted { color: var(--muted); }
+  .accent { color: var(--accent); }
+  .accent2 { color: var(--accent2); }
+  .small { font-size: 20px; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 1150px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; }
+  .card h3 { margin: 0 0 8px; font-size: 22px; color: var(--accent); }
+  .card p { margin: 0; font-size: 19px; color: var(--muted); line-height: 1.45; }
+
+  .pills { display: flex; flex-wrap: wrap; gap: 10px; max-width: 1100px; }
+  .pill { background: var(--navy); border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; font-size: 19px; }
+  .pill.a { border-color: var(--accent); }
+  .pill.m { border-color: var(--accent2); }
+
+  .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 20px; max-width: 1150px; }
+  .node { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; }
+  .node.hot { border-color: var(--accent); }
+  .node.m { border-color: var(--accent2); }
+  .arrow { color: var(--muted); font-size: 24px; }
+
+  .stat { display: flex; gap: 48px; flex-wrap: wrap; margin-top: 8px; }
+  .stat .n { font-size: 56px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .stat .l { font-size: 19px; color: var(--muted); margin-top: 8px; max-width: 220px; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; max-width: 1150px; }
+  .two h3 { font-size: 22px; margin: 0 0 10px; }
+  .two.before h3 { color: #ff6b6b; }
+  .two.after h3 { color: var(--green); }
+
+  /* footer / chrome */
+  .foot {
+    position: absolute; left: var(--pad); bottom: 22px;
+    font-size: 15px; color: var(--muted); letter-spacing: .5px;
+    display: flex; gap: 18px; align-items: center;
+  }
+  .foot .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; }
+  #pager {
+    position: absolute; right: calc(var(--cam-w) + 56px); bottom: 24px;
+    font-size: 15px; color: var(--muted);
+  }
+
+  /* webcam-safe zone guide (toggle with G) */
+  .cam-zone {
+    position: absolute; right: 24px; bottom: 24px;
+    width: var(--cam-w); height: var(--cam-h);
+    border: 2px dashed rgba(255,153,0,.6); border-radius: 12px;
+    display: none; align-items: flex-end; justify-content: center;
+    color: rgba(255,153,0,.9); font-size: 13px; padding-bottom: 8px;
+    pointer-events: none;
+  }
+  .cam-zone.show { display: flex; }
+
+  /* presenter notes (toggle with N) */
+  .notes {
+    position: absolute; left: var(--pad); right: calc(var(--cam-w) + 56px);
+    bottom: 52px; background: rgba(22,27,34,.96); border: 1px solid var(--line);
+    border-left: 3px solid var(--accent); border-radius: 8px; padding: 14px 18px;
+    font-size: 18px; line-height: 1.5; color: var(--muted); display: none;
+  }
+  .slide.active .notes.on { display: block; }
+
+  .hint { position: absolute; top: 18px; right: 24px; font-size: 13px; color: #55606b; }
+  .hint b { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- 1 — Title -->
+  <section class="slide active">
+    <p class="kicker">AI-Driven Compliance · Secure Controls Framework 2026.2</p>
+    <h1>SCF Compliance Agent</h1>
+    <p class="tag">An autonomous compliance assessor on Amazon Bedrock AgentCore —<br/>built to be called by <span class="accent2">other agents</span>, not just people.</p>
+    <div class="notes">Hi, I'm walking through the SCF Compliance Agent — an AI agent that does security compliance assessment against the Secure Controls Framework. The headline: it runs on AWS Bedrock AgentCore and it's designed as agent-to-agent infrastructure. Let me show you what it does and how it's built.</div>
+  </section>
+
+  <!-- 2 — Problem -->
+  <section class="slide">
+    <p class="kicker">The problem</p>
+    <h2>Compliance work is slow, manual, and repetitive</h2>
+    <ul>
+      <li>The <b>Secure Controls Framework</b> spans <b>1,534 controls</b> mapped to <b>250+ laws, regulations and frameworks</b> worldwide.</li>
+      <li>Gap analysis, framework mapping, and evidence gathering are done by hand, over and over.</li>
+      <li>Security questionnaires ask the <b>same questions</b> every quarter — teams keep re-answering them.</li>
+      <li>The knowledge lives in spreadsheets and people's heads, not in something a <b>system</b> can query.</li>
+    </ul>
+    <div class="notes">Here's the problem. The SCF is huge — over fifteen hundred controls cross-referenced to hundreds of regulations. Teams do gap analysis, framework mapping, and evidence collection manually, and they answer the same vendor questionnaires again and again. The knowledge isn't queryable. That's what this agent fixes.</div>
+  </section>
+
+  <!-- 3 — What it does -->
+  <section class="slide">
+    <p class="kicker">What it does</p>
+    <h2>Eight compliance capabilities, one agent</h2>
+    <div class="grid">
+      <div class="card"><h3>Gap Analysis</h3><p>Identify missing controls against any target framework.</p></div>
+      <div class="card"><h3>Maturity Assessment</h3><p>Score against SCR-CMM Levels 0–5.</p></div>
+      <div class="card"><h3>Framework Mapping</h3><p>Translate between SCF and 250+ regulations.</p></div>
+      <div class="card"><h3>Evidence Checklists</h3><p>Generate audit-ready evidence requirements.</p></div>
+      <div class="card"><h3>Compensating Controls</h3><p>Recommend alternatives for gaps.</p></div>
+      <div class="card"><h3>Questionnaire Reuse</h3><p>Find and reuse approved past answers.</p></div>
+      <div class="card"><h3>Web Research</h3><p>Live search for reg updates, CVEs, breaches.</p></div>
+      <div class="card"><h3>Long-Term Memory</h3><p>Remembers your org across sessions.</p></div>
+    </div>
+    <div class="notes">The agent does eight things: gap analysis, maturity scoring against the SCR capability-maturity model, mapping between frameworks, generating evidence checklists, suggesting compensating controls, reusing approved questionnaire answers, live web research, and long-term memory of your organization. One agent, these eight jobs.</div>
+  </section>
+
+  <!-- 4 — Architecture -->
+  <section class="slide">
+    <p class="kicker">Architecture</p>
+    <h2>One agent core, data-grounded reasoning</h2>
+    <div class="flow">
+      <span class="node m">Callers</span>
+      <span class="arrow">→</span>
+      <span class="node hot">AgentCore Runtime<br/><span class="small muted">Strands + Claude Sonnet + Guardrail</span></span>
+    </div>
+    <div style="height:18px"></div>
+    <div class="pills">
+      <span class="pill a">Knowledge Base (S3 Vectors) — semantic discovery</span>
+      <span class="pill a">DynamoDB — full control data (1,534 items)</span>
+      <span class="pill a">DynamoDB — approved answers</span>
+      <span class="pill a">AgentCore Memory — org context</span>
+      <span class="pill a">MCP Gateway — web search</span>
+    </div>
+    <p class="lead small muted" style="margin-top:22px">Two-step data flow: vector search finds the right control IDs fast, DynamoDB returns the complete untruncated data, the model reasons over it.</p>
+    <div class="notes">Architecturally there's one agent core — the Strands framework running Claude Sonnet on AgentCore Runtime, with a Bedrock Guardrail on every call. It's grounded in data: a knowledge base for fast semantic discovery, DynamoDB for the full control records and approved answers, AgentCore Memory for org context, and an MCP gateway for live web search. The pattern is two-step — vector search finds the right controls, DynamoDB returns the full detail, the model reasons over that.</div>
+  </section>
+
+  <!-- 5 — Three ways in -->
+  <section class="slide">
+    <p class="kicker">Access model</p>
+    <h2>Three ways in, three auth models</h2>
+    <ul>
+      <li><b>IAM / SigV4</b> — AWS principals and CLI scripts invoke the runtime directly.</li>
+      <li><b class="accent2">A2A protocol</b> — other agents call it over JSON-RPC through an API Gateway, authenticated with OAuth2 / OIDC bearer tokens (Cognito or Microsoft Entra ID).</li>
+      <li><b>Hosted UI</b> — an optional Streamlit web app for humans (currently disabled to cut cost; ready to switch back on).</li>
+    </ul>
+    <p class="lead small muted" style="margin-top:18px">Same agent behind all three. The split is purely about <i>who is allowed to call</i>.</p>
+    <div class="notes">There are three front doors, each with its own authentication. AWS principals use IAM SigV4 directly. Other agents use the open A2A protocol over JSON-RPC, authenticated with OAuth tokens from Cognito or Microsoft Entra. And there's an optional human web UI — currently switched off to save money, but ready to turn back on. Same agent behind all of them; the only difference is who's allowed to call.</div>
+  </section>
+
+  <!-- 6 — A2A deep dive -->
+  <section class="slide">
+    <p class="kicker">Agent-to-agent ingress</p>
+    <h2>Non-blocking, so long assessments don't time out</h2>
+    <div class="flow">
+      <span class="node m">Agent caller</span><span class="arrow">→</span>
+      <span class="node">API Gateway<br/><span class="small muted">JWT authorizer</span></span><span class="arrow">→</span>
+      <span class="node">Bridge Lambda<br/><span class="small muted">submit only</span></span><span class="arrow">→</span>
+      <span class="node">SQS + DLQ</span><span class="arrow">→</span>
+      <span class="node hot">Worker Lambda<br/><span class="small muted">runs the turn</span></span>
+    </div>
+    <p class="lead" style="margin-top:22px"><code>message/send</code> returns a <b>submitted</b> task in under a second; a worker runs the agent out of band and the caller polls <code>tasks/get</code> until it's done.</p>
+    <div class="notes">The agent-to-agent path is deliberately non-blocking. API Gateway caps a request at thirty seconds, but a full gap analysis takes longer. So message-send writes a task and returns immediately; an SQS-triggered worker Lambda runs the agent turn out of band, with a dead-letter queue if it fails; the caller polls for the result. Long assessments no longer time out, and a failed task can't infinitely retry.</div>
+  </section>
+
+  <!-- 7 — Security -->
+  <section class="slide">
+    <p class="kicker">Security</p>
+    <h2>Built for non-human identities</h2>
+    <ul>
+      <li><b>Bedrock Guardrail</b> on every model call — prompt-attack, PII, and harmful-content filtering.</li>
+      <li><b>OAuth2 client-credentials</b> with a narrow <code>invoke</code> scope and <b>60-minute</b> tokens.</li>
+      <li><b>Caller isolation</b> — session IDs are derived per caller, so no two agents share context.</li>
+      <li>Aligned to the <b>OWASP Non-Human Identities Top 10</b> — least privilege, short-lived secrets, no credential reuse.</li>
+    </ul>
+    <div class="notes">Because the callers are machines, security is built around non-human identities. Every model call passes through a Bedrock Guardrail. Machine callers authenticate with OAuth client-credentials, scoped to just "invoke," with sixty-minute tokens. Sessions are isolated per caller. And the whole design is mapped against the OWASP Non-Human Identities Top 10 — least privilege, short-lived secrets, no shared credentials.</div>
+  </section>
+
+  <!-- 8 — Cost -->
+  <section class="slide">
+    <p class="kicker">Cost engineering</p>
+    <h2>From standing cost to pay-per-use</h2>
+    <div class="two">
+      <div class="two before">
+        <h3>Before</h3>
+        <ul class="small">
+          <li>Fargate + ALB + CloudFront running 24/7 for a human UI</li>
+          <li>~$30–40/month standing cost even when idle</li>
+          <li>No guard on runaway agent traffic</li>
+        </ul>
+      </div>
+      <div class="two after">
+        <h3>After (agents-only)</h3>
+        <ul class="small">
+          <li>Human UI disabled — one Terraform flag</li>
+          <li>Core agent is pay-per-use: ~$0 when idle</li>
+          <li>Per-route API throttling + a monthly budget alarm</li>
+        </ul>
+      </div>
+    </div>
+    <div class="notes">When the project went agents-only, we cut cost deliberately. The human web UI — Fargate, a load balancer, and CloudFront — ran around the clock and cost thirty to forty dollars a month even idle. Disabling it is one Terraform flag. The core agent is pay-per-use, basically free when nothing's calling it. And we added per-route throttling and a monthly budget alarm so machine traffic can't run up a surprise bill.</div>
+  </section>
+
+  <!-- 9 — Data freshness -->
+  <section class="slide">
+    <p class="kicker">Stays current</p>
+    <h2>Self-updating SCF data</h2>
+    <div class="flow">
+      <span class="node">EventBridge<br/><span class="small muted">weekly cron</span></span><span class="arrow">→</span>
+      <span class="node">Updater Lambda<br/><span class="small muted">version check</span></span><span class="arrow">→</span>
+      <span class="node hot">S3 + reindex KB + reload DynamoDB</span><span class="arrow">→</span>
+      <span class="node">SNS notify</span>
+    </div>
+    <p class="lead" style="margin-top:22px">A weekly job checks for a new SCF release, and if the version changed it re-ingests the data and emails the team. <span class="muted">No manual intervention.</span></p>
+    <div class="notes">The data stays current on its own. A weekly EventBridge job runs a Lambda that checks the published SCF version. If there's a new release, it uploads the data, re-indexes the knowledge base, reloads DynamoDB, and emails the team. Nobody has to babysit framework updates.</div>
+  </section>
+
+  <!-- 10 — Practical output -->
+  <section class="slide">
+    <p class="kicker">Real output</p>
+    <h2>From controls to an AWS implementation plan</h2>
+    <ul>
+      <li>Ask it to map a baseline — e.g. <b>GovRAMP</b> or <b>FedRAMP</b> — and it returns the SCF controls with their NIST 800-53 references.</li>
+      <li>We generated audit-style worksheets: each control with <b>AWS implementation guidance</b>, the <b>SCF evidence-request references</b>, and <b>example evidence</b>.</li>
+      <li>Everything is grounded in the real SCF 2026.2 catalog — not invented.</li>
+    </ul>
+    <p class="lead small muted" style="margin-top:14px">Example artifacts: GovRAMP Core (86 controls) and FedRAMP Low (383 controls) worksheets.</p>
+    <div class="notes">Here's what that looks like in practice. Ask the agent to map a baseline like GovRAMP or FedRAMP and it returns the relevant SCF controls with their NIST 800-53 references. From that we built audit-style worksheets — every control with concrete AWS implementation guidance, the official SCF evidence references, and example evidence. All grounded in the real 2026.2 catalog. We produced GovRAMP Core at eighty-six controls and FedRAMP Low at three hundred eighty-three.</div>
+  </section>
+
+  <!-- 11 — Infra / ops -->
+  <section class="slide">
+    <p class="kicker">How it's operated</p>
+    <h2>Infrastructure as code, end to end</h2>
+    <div class="stat">
+      <div><div class="n">100%</div><div class="l">Terraform-provisioned AWS infrastructure</div></div>
+      <div><div class="n">5</div><div class="l">Lambdas: bridge, worker, updater, audit, OCR</div></div>
+      <div><div class="n">4</div><div class="l">DynamoDB tables with full audit trail</div></div>
+    </div>
+    <p class="lead small muted" style="margin-top:26px">Guardrail, throttling, budget alarm, and a 365-day answer audit log are all codified and version-controlled.</p>
+    <div class="notes">Operationally, it's all infrastructure as code. The entire AWS footprint is Terraform. Five Lambdas handle the A2A bridge and worker, the weekly updater, the audit logger, and document OCR. Four DynamoDB tables, including a year-long audit trail on every approved-answer change. The guardrail, throttling, budget alarm — all codified and version controlled.</div>
+  </section>
+
+  <!-- 12 — Close -->
+  <section class="slide">
+    <p class="kicker">Summary</p>
+    <h2>A compliance expert your other agents can call</h2>
+    <ul>
+      <li><b>Grounded:</b> real SCF 2026.2 data, two-step retrieval, guardrailed reasoning.</li>
+      <li><b>Agent-native:</b> open A2A protocol, OAuth-secured, non-blocking.</li>
+      <li><b>Cost-aware:</b> pay-per-use core, throttled, budget-alarmed.</li>
+      <li><b>Current &amp; auditable:</b> self-updating data, full audit trail, all IaC.</li>
+    </ul>
+    <p class="tag" style="margin-top:22px">github.com/mgbec/SCF-Agent-with-A2A</p>
+    <div class="notes">To wrap up: this is a compliance expert that your other agents can call. It's grounded in real framework data with guardrailed reasoning. It's agent-native — open protocol, OAuth-secured, non-blocking. It's cost-aware by design. And it stays current and fully auditable, all as code. Thanks for watching.</div>
+  </section>
+
+  <div class="cam-zone" id="cam">webcam-safe zone</div>
+  <div id="pager">1 / 12</div>
+  <div class="foot"><span class="dot"></span> SCF Compliance Agent · Bedrock AgentCore + A2A</div>
+  <div class="hint"><b>←/→</b> move · <b>N</b> notes · <b>G</b> cam guide · <b>F</b> full</div>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var i = 0, notesOn = false;
+  var pager = document.getElementById('pager');
+  var cam = document.getElementById('cam');
+
+  function render() {
+    slides.forEach(function (s, n) { s.classList.toggle('active', n === i); });
+    pager.textContent = (i + 1) + ' / ' + slides.length;
+    // keep notes toggle state applied to the active slide
+    var note = slides[i].querySelector('.notes');
+    if (note) note.classList.toggle('on', notesOn);
+  }
+  function go(n) { i = Math.max(0, Math.min(slides.length - 1, n)); render(); }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(i + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(i - 1); }
+    else if (e.key === 'Home') { go(0); }
+    else if (e.key === 'End') { go(slides.length - 1); }
+    else if (e.key === 'n' || e.key === 'N') {
+      notesOn = !notesOn;
+      slides.forEach(function (s) { var nt = s.querySelector('.notes'); if (nt) nt.classList.toggle('on', notesOn); });
+      render();
+    }
+    else if (e.key === 'g' || e.key === 'G') { cam.classList.toggle('show'); }
+    else if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); }
+      else { document.exitFullscreen(); }
+    }
+  });
+
+  // click / tap right half = next, left half = previous
+  document.getElementById('deck').addEventListener('click', function (e) {
+    go(e.clientX > window.innerWidth / 2 ? i + 1 : i - 1);
+  });
+
+  render();
+</script>
+</body>
+</html>

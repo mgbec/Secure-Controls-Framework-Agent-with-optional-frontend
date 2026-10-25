@@ -1,0 +1,69 @@
+# Copy this file to terraform.tfvars and customize
+
+aws_region   = "us-east-1"
+project_name = "scf-agent"
+
+# Foundation model for agent reasoning (must be enabled in your account)
+bedrock_model_id = "us.anthropic.claude-sonnet-4-20250514-v1:0"
+
+# Embedding model for knowledge base vector indexing
+embedding_model_id = "amazon.titan-embed-text-v2:0"
+
+# Logging level for the agent runtime
+log_level = "INFO"
+
+# Email for SCF update notifications (optional - leave empty to skip)
+notification_email = "security-team@example.com"
+
+################################################################################
+# A2A (Agent-to-Agent) ingress
+################################################################################
+
+# Provision the API Gateway HTTP API + bridge Lambda for incoming A2A connections
+enable_a2a = true
+
+# Name published in the A2A Agent Card
+agent_public_name = "SCF Compliance Assessment Agent"
+
+# Globally-unique Cognito hosted-UI domain prefix
+# -> <prefix>.auth.<region>.amazoncognito.com  (must not already be taken)
+cognito_a2a_domain_prefix = "scf-agent-a2a"
+
+# Callback/logout URLs for the interactive Cognito app client (hosted UI login)
+cognito_a2a_web_callback_urls = ["http://localhost:8501/oauth2callback", "http://localhost:8501/"]
+
+# --- Microsoft Entra ID route (optional) ---
+# Leave entra_tenant_id empty to skip the Entra-authorized route entirely.
+# See docs/a2a-integration.md for how to create the Entra app registration.
+entra_tenant_id = ""
+# App ID URI or client ID of this API's Entra app registration (the token `aud`)
+entra_audience = ""
+# Set only for v1.0 tokens: "https://sts.windows.net/<tenant-id>/"
+entra_issuer_override = ""
+
+# Optional custom domain for the A2A API (only changes URLs in the Agent Card)
+a2a_custom_domain = ""
+
+# Async A2A worker: max seconds per agent turn, and the SQS event-source
+# concurrency cap (bounds concurrent Bedrock calls; minimum 2). message/send
+# returns immediately; the worker runs the turn out of band, client polls tasks/get.
+a2a_worker_timeout         = 600
+a2a_worker_max_concurrency = 5
+
+################################################################################
+# Cost & abuse controls (agents-only ingress)
+################################################################################
+
+# Per-route request cap on the A2A RPC routes (requests over the limit get 429).
+# A machine caller can loop far faster than a human, so this bounds billable
+# agent invocations. Raise if your legitimate fan-out is higher.
+a2a_throttle_rate_limit  = 5
+a2a_throttle_burst_limit = 10
+
+# Monthly AWS Budgets cost alarm. Doesn't hard-stop spend; emails at each
+# threshold (ACTUAL + FORECASTED). Set enable_cost_budget = false to skip.
+enable_cost_budget      = true
+monthly_budget_usd      = 100
+budget_alert_thresholds = [50, 80, 100]
+# Leave empty to reuse notification_email; set to send budget alerts elsewhere.
+budget_notification_email = ""

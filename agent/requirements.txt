@@ -1,0 +1,8 @@
+# Pinned with compatible-release bounds to keep container builds reproducible
+# while still allowing patch/minor security updates. Raise the ceilings
+# deliberately after testing a new major version.
+#
+# strands-agents is pre-1.0, so pin to the minor series to avoid breaking
+# changes that can land in 0.x minor bumps.
+strands-agents>=0.3.0,<0.4.0
+boto3>=1.38.0,<2.0.0
